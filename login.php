@@ -1,13 +1,4 @@
 <?php
-// session_start();
-// if (isset($_SESSION['role'])) {
-//     if ($_SESSION['role'] === 'admin') {
-//         header('Location: admin/dashboard.php');
-//     } else {
-//         header('Location: warga/home.php');
-//     }
-//     exit;
-// }
 include "config/db.php"
 ?>
 <!DOCTYPE html>
