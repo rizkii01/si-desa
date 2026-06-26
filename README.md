@@ -111,3 +111,4 @@ Frontend berjalan di `http://localhost:5173`, backend di `http://localhost:5000`
 | GET/PUT | `/api/admin/submissions/letters` | Kelola pengajuan surat |
 | GET/PUT | `/api/admin/submissions/queues` | Kelola antrian |
 | GET/PUT | `/api/admin/submissions/complaints` | Kelola aduan |
+"# e-desa" 
