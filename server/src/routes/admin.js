@@ -8,6 +8,12 @@ const {
   getQueues, updateQueue,
   getComplaints, updateComplaint,
 } = require('../controllers/adminController');
+const {
+  getAdminSmartLetters, getAdminSmartLetterDetail, approveSmartLetter, rejectSmartLetter,
+} = require('../controllers/smartLetterController');
+const {
+  getNotifications, getUnreadCount, markAsRead,
+} = require('../controllers/notificationController');
 
 const router = Router();
 router.use(verifyToken, roleCheck('admin'));
@@ -32,5 +38,14 @@ router.put('/submissions/queues/:id', updateQueue);
 
 router.get('/submissions/complaints', getComplaints);
 router.put('/submissions/complaints/:id/reply', updateComplaint);
+
+router.get('/smart-letters', getAdminSmartLetters);
+router.get('/smart-letters/:id', getAdminSmartLetterDetail);
+router.put('/smart-letters/:id/approve', approveSmartLetter);
+router.put('/smart-letters/:id/reject', rejectSmartLetter);
+
+router.get('/notifications', getNotifications);
+router.get('/notifications/unread-count', getUnreadCount);
+router.put('/notifications/:id/read', markAsRead);
 
 module.exports = router;

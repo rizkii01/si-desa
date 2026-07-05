@@ -21,7 +21,7 @@ const toLetterResponse = (letter) => ({
 
 const getCurrentUser = async (id) => {
   const [rows] = await pool.query(
-    'SELECT id, nik, nama_lengkap FROM users WHERE id = ?',
+    'SELECT id, nik, nama_lengkap FROM users WHERE id = $1',
     [id]
   );
   return rows[0] || null;
@@ -30,7 +30,7 @@ const getCurrentUser = async (id) => {
 exports.getProfile = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      'SELECT id, nik, nama_lengkap, email, no_hp, alamat, tempat_lahir, tanggal_lahir, jenis_kelamin, foto_profil, created_at FROM users WHERE id = ?',
+      'SELECT id, nik, nama_lengkap, email, no_hp, alamat, tempat_lahir, tanggal_lahir, jenis_kelamin, foto_profil, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
     if (rows.length === 0) return res.status(404).json({ message: 'Data tidak ditemukan' });
@@ -51,7 +51,7 @@ exports.updateProfile = async (req, res) => {
       return res.status(400).json({ message: 'No HP maksimal 15 karakter' });
     }
     await pool.query(
-      'UPDATE users SET email = ?, no_hp = ?, alamat = ? WHERE id = ?',
+      'UPDATE users SET email = $1, no_hp = $2, alamat = $3 WHERE id = $4',
       [email || null, no_hp || null, alamat || null, req.user.id]
     );
     res.json({ message: 'Profil berhasil diperbarui' });
@@ -65,13 +65,13 @@ exports.uploadPhoto = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'File tidak ditemukan' });
 
-    const [rows] = await pool.query('SELECT foto_profil FROM users WHERE id = ?', [req.user.id]);
+    const [rows] = await pool.query('SELECT foto_profil FROM users WHERE id = $1', [req.user.id]);
     if (rows.length > 0 && rows[0].foto_profil) {
       const oldPath = path.join(__dirname, '..', '..', '..', 'uploads', 'profil', rows[0].foto_profil);
       if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
     }
 
-    await pool.query('UPDATE users SET foto_profil = ? WHERE id = ?', [req.file.filename, req.user.id]);
+    await pool.query('UPDATE users SET foto_profil = $1 WHERE id = $2', [req.file.filename, req.user.id]);
     res.json({ foto_profil: fotoUrl(req.file.filename), message: 'Foto berhasil diupload' });
   } catch (err) {
     console.error(err);
@@ -91,7 +91,7 @@ exports.submitLetter = async (req, res) => {
     const user = await getCurrentUser(req.user.id);
     if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
     await pool.query(
-      'INSERT INTO pengajuan_surat (nik, nama_lengkap, jenis_layanan, keperluan, berkas_pendukung, status) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO pengajuan_surat (nik, nama_lengkap, jenis_layanan, keperluan, berkas_pendukung, status) VALUES ($1, $2, $3, $4, $5, $6)',
       [user.nik, user.nama_lengkap, jenis_layanan, keperluan, berkas, 'Pending']
     );
     res.status(201).json({ message: 'Pengajuan surat berhasil dikirim' });
@@ -117,7 +117,7 @@ exports.submitQueue = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
     const [existing] = await pool.query(
-      'SELECT id FROM pengajuan_antrian WHERE nik = ? AND tanggal = ? AND status = ?',
+      'SELECT id FROM pengajuan_antrian WHERE nik = $1 AND tanggal = $2 AND status = $3',
       [user.nik, tanggal, 'Pending']
     );
     if (existing.length > 0) {
@@ -125,7 +125,7 @@ exports.submitQueue = async (req, res) => {
     }
 
     await pool.query(
-      'INSERT INTO pengajuan_antrian (nik, nama_lengkap, tanggal, jenis_layanan, status) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO pengajuan_antrian (nik, nama_lengkap, tanggal, jenis_layanan, status) VALUES ($1, $2, $3, $4, $5)',
       [user.nik, user.nama_lengkap, tanggal, jenis_layanan, 'Pending']
     );
     res.status(201).json({ message: 'Antrian berhasil diajukan' });
@@ -149,7 +149,7 @@ exports.submitComplaint = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
     await pool.query(
-      'INSERT INTO pengaduan (nik, nama_lengkap, isi_aduan, status) VALUES (?, ?, ?, ?)',
+      'INSERT INTO pengaduan (nik, nama_lengkap, isi_aduan, status) VALUES ($1, $2, $3, $4)',
       [user.nik, nama_pengadu, isi_aduan, 'Baru']
     );
     res.status(201).json({ message: 'Aduan berhasil dikirim' });
@@ -165,15 +165,15 @@ exports.getHistory = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
     const [surat] = await pool.query(
-      'SELECT id, jenis_layanan, keperluan, berkas_pendukung, status, catatan_admin, tanggal_pengajuan FROM pengajuan_surat WHERE nik = ? ORDER BY tanggal_pengajuan DESC',
+      'SELECT id, jenis_layanan, keperluan, berkas_pendukung, status, catatan_admin, tanggal_pengajuan FROM pengajuan_surat WHERE nik = $1 ORDER BY tanggal_pengajuan DESC',
       [user.nik]
     );
     const [antrian] = await pool.query(
-      'SELECT id, tanggal, jenis_layanan, nomor_antrian, status FROM pengajuan_antrian WHERE nik = ? ORDER BY tanggal DESC, created_at DESC',
+      'SELECT id, tanggal, jenis_layanan, nomor_antrian, status FROM pengajuan_antrian WHERE nik = $1 ORDER BY tanggal DESC, created_at DESC',
       [user.nik]
     );
     const [pengaduan] = await pool.query(
-      'SELECT id, nama_lengkap, isi_aduan, status, balasan_admin, tanggal_pengaduan FROM pengaduan WHERE nik = ? ORDER BY tanggal_pengaduan DESC',
+      'SELECT id, nama_lengkap, isi_aduan, status, balasan_admin, tanggal_pengaduan FROM pengaduan WHERE nik = $1 ORDER BY tanggal_pengaduan DESC',
       [user.nik]
     );
 

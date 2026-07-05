@@ -12,6 +12,9 @@ import SubmitLetter from './pages/citizen/SubmitLetter';
 import SubmitQueue from './pages/citizen/SubmitQueue';
 import SubmitComplaint from './pages/citizen/SubmitComplaint';
 import History from './pages/citizen/History';
+import SmartSubmitLetter from './pages/citizen/SmartSubmitLetter';
+import SmartLetterHistory from './pages/citizen/SmartLetterHistory';
+import Notifications from './pages/citizen/Notifications';
 import AdminDashboard from './pages/admin/Dashboard';
 import ManageResidents from './pages/admin/ManageResidents';
 import ResidentDetail from './pages/admin/ResidentDetail';
@@ -19,6 +22,9 @@ import ManageAdmins from './pages/admin/ManageAdmins';
 import ManageLetters from './pages/admin/ManageLetters';
 import ManageQueues from './pages/admin/ManageQueues';
 import ManageComplaints from './pages/admin/ManageComplaints';
+import ManageSmartLetters from './pages/admin/ManageSmartLetters';
+import SmartLetterDetail from './pages/admin/SmartLetterDetail';
+import AdminNotifications from './pages/admin/AdminNotifications';
 
 function ProtectedRoute({ children, role }) {
   const { user, loading } = useAuth();
@@ -45,6 +51,9 @@ export default function App() {
         <Route path="submit-queue" element={<SubmitQueue />} />
         <Route path="submit-complaint" element={<SubmitComplaint />} />
         <Route path="history" element={<History />} />
+        <Route path="smart-submit-letter" element={<SmartSubmitLetter />} />
+        <Route path="smart-letters" element={<SmartLetterHistory />} />
+        <Route path="notifications" element={<Notifications />} />
       </Route>
 
       <Route path="/admin" element={<ProtectedRoute role="admin"><AdminLayout /></ProtectedRoute>}>
@@ -56,6 +65,9 @@ export default function App() {
         <Route path="letters" element={<ManageLetters />} />
         <Route path="queues" element={<ManageQueues />} />
         <Route path="complaints" element={<ManageComplaints />} />
+        <Route path="smart-letters" element={<ManageSmartLetters />} />
+        <Route path="smart-letters/:id" element={<SmartLetterDetail />} />
+        <Route path="notifications" element={<AdminNotifications />} />
       </Route>
     </Routes>
   );

@@ -45,7 +45,7 @@ exports.getResidents = async (req, res) => {
 
 exports.getResident = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM users WHERE id = ? AND role = 'warga'", [req.params.id]);
+    const [rows] = await pool.query("SELECT * FROM users WHERE id = $1 AND role = 'warga'", [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ message: 'Warga tidak ditemukan' });
     res.json(rows[0]);
   } catch (err) {
@@ -63,12 +63,12 @@ exports.createResident = async (req, res) => {
     if (!/^\d{16}$/.test(nik)) {
       return res.status(400).json({ message: 'NIK harus 16 digit angka' });
     }
-    const [existing] = await pool.query('SELECT id FROM users WHERE nik = ?', [nik]);
+    const [existing] = await pool.query('SELECT id FROM users WHERE nik = $1', [nik]);
     if (existing.length > 0) return res.status(400).json({ message: 'NIK sudah terdaftar' });
 
     const hashedDate = await bcrypt.hash(tanggal_lahir, 10);
     await pool.query(
-      "INSERT INTO users (nik, nama_lengkap, email, no_hp, alamat, tempat_lahir, tanggal_lahir, password_hash, jenis_kelamin, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'warga')",
+      "INSERT INTO users (nik, nama_lengkap, email, no_hp, alamat, tempat_lahir, tanggal_lahir, password_hash, jenis_kelamin, role) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'warga')",
       [nik, nama_lengkap, email || null, no_hp || null, alamat || null, tempat_lahir || null, tanggal_lahir, hashedDate, jenis_kelamin]
     );
     res.status(201).json({ message: 'Warga berhasil ditambahkan' });
@@ -79,17 +79,17 @@ exports.createResident = async (req, res) => {
 };
 
 exports.updateResident = async (req, res) => {
-  let conn;
+  let client;
   try {
-    conn = await pool.getConnection();
+    client = await pool.connect();
     const { nik, nama_lengkap, email, no_hp, alamat, tempat_lahir, tanggal_lahir, jenis_kelamin } = req.body;
     const { id } = req.params;
 
-    await conn.beginTransaction();
+    await client.query('BEGIN');
 
-    const [currentRows] = await conn.query("SELECT nik, tanggal_lahir FROM users WHERE id = ? AND role = 'warga' FOR UPDATE", [id]);
+    const [currentRows] = await client.query("SELECT nik, tanggal_lahir FROM users WHERE id = $1 AND role = 'warga' FOR UPDATE", [id]);
     if (currentRows.length === 0) {
-      await conn.rollback();
+      await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Warga tidak ditemukan' });
     }
     const oldNik = currentRows[0].nik;
@@ -103,44 +103,44 @@ exports.updateResident = async (req, res) => {
       : undefined;
 
     if (nik) {
-      const [dup] = await conn.query('SELECT id FROM users WHERE nik = ? AND id != ?', [nik, id]);
+      const [dup] = await client.query('SELECT id FROM users WHERE nik = $1 AND id != $2', [nik, id]);
       if (dup.length > 0) {
-        await conn.rollback();
+        await client.query('ROLLBACK');
         return res.status(400).json({ message: 'NIK sudah digunakan warga lain' });
       }
     }
 
     if (dateChanged) {
-      await conn.query(
-        'UPDATE users SET nik = ?, nama_lengkap = ?, email = ?, no_hp = ?, alamat = ?, tempat_lahir = ?, tanggal_lahir = ?, password_hash = ?, jenis_kelamin = ? WHERE id = ?',
+      await client.query(
+        'UPDATE users SET nik = $1, nama_lengkap = $2, email = $3, no_hp = $4, alamat = $5, tempat_lahir = $6, tanggal_lahir = $7, password_hash = $8, jenis_kelamin = $9 WHERE id = $10',
         [nik, nama_lengkap, email || null, no_hp || null, alamat || null, tempat_lahir || null, tanggal_lahir, finalPasswordHash, jenis_kelamin, id]
       );
     } else {
-      await conn.query(
-        'UPDATE users SET nik = ?, nama_lengkap = ?, email = ?, no_hp = ?, alamat = ?, tempat_lahir = ?, jenis_kelamin = ? WHERE id = ?',
+      await client.query(
+        'UPDATE users SET nik = $1, nama_lengkap = $2, email = $3, no_hp = $4, alamat = $5, tempat_lahir = $6, jenis_kelamin = $7 WHERE id = $8',
         [nik, nama_lengkap, email || null, no_hp || null, alamat || null, tempat_lahir || null, jenis_kelamin, id]
       );
     }
     if (nik && nik !== oldNik) {
-      await conn.query('UPDATE pengajuan_surat SET nik = ? WHERE nik = ?', [nik, oldNik]);
-      await conn.query('UPDATE pengajuan_antrian SET nik = ? WHERE nik = ?', [nik, oldNik]);
-      await conn.query('UPDATE pengaduan SET nik = ? WHERE nik = ?', [nik, oldNik]);
+      await client.query('UPDATE pengajuan_surat SET nik = $1 WHERE nik = $2', [nik, oldNik]);
+      await client.query('UPDATE pengajuan_antrian SET nik = $1 WHERE nik = $2', [nik, oldNik]);
+      await client.query('UPDATE pengaduan SET nik = $1 WHERE nik = $2', [nik, oldNik]);
     }
-    await conn.commit();
+    await client.query('COMMIT');
     res.json({ message: 'Data warga berhasil diperbarui' });
   } catch (err) {
-    if (conn) await conn.rollback();
+    if (client) await client.query('ROLLBACK');
     console.error(err);
     res.status(500).json({ message: 'Terjadi kesalahan server' });
   } finally {
-    if (conn) conn.release();
+    if (client) client.release();
   }
 };
 
 exports.deleteResident = async (req, res) => {
   try {
-    const [result] = await pool.query("DELETE FROM users WHERE id = ? AND role = 'warga'", [req.params.id]);
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Warga tidak ditemukan' });
+    const [result] = await pool.query("DELETE FROM users WHERE id = $1 AND role = 'warga'", [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ message: 'Warga tidak ditemukan' });
     res.json({ message: 'Warga berhasil dihapus' });
   } catch (err) {
     console.error(err);
@@ -167,12 +167,12 @@ exports.createAdmin = async (req, res) => {
     if (!/^\d{16}$/.test(nik)) {
       return res.status(400).json({ message: 'NIK harus 16 digit angka' });
     }
-    const [existing] = await pool.query('SELECT id FROM users WHERE nik = ?', [nik]);
+    const [existing] = await pool.query('SELECT id FROM users WHERE nik = $1', [nik]);
     if (existing.length > 0) return res.status(400).json({ message: 'NIK sudah terdaftar' });
 
     const hashedDate = await bcrypt.hash(tanggal_lahir, 10);
     await pool.query(
-      "INSERT INTO users (nik, nama_lengkap, email, no_hp, tanggal_lahir, password_hash, jenis_kelamin, role) VALUES (?, ?, ?, ?, ?, ?, ?, 'admin')",
+      "INSERT INTO users (nik, nama_lengkap, email, no_hp, tanggal_lahir, password_hash, jenis_kelamin, role) VALUES ($1, $2, $3, $4, $5, $6, $7, 'admin')",
       [nik, nama_lengkap, email || null, no_hp || null, tanggal_lahir, hashedDate, jenis_kelamin]
     );
     res.status(201).json({ message: 'Admin berhasil ditambahkan' });
@@ -187,8 +187,8 @@ exports.deleteAdmin = async (req, res) => {
     if (parseInt(req.params.id) === req.user.id) {
       return res.status(400).json({ message: 'Tidak dapat menghapus akun sendiri' });
     }
-    const [result] = await pool.query("DELETE FROM users WHERE id = ? AND role = 'admin'", [req.params.id]);
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Admin tidak ditemukan' });
+    const [result] = await pool.query("DELETE FROM users WHERE id = $1 AND role = 'admin'", [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ message: 'Admin tidak ditemukan' });
     res.json({ message: 'Admin berhasil dihapus' });
   } catch (err) {
     console.error(err);
@@ -216,7 +216,7 @@ exports.updateLetterStatus = async (req, res) => {
       return res.status(400).json({ message: 'Status tidak valid' });
     }
     await pool.query(
-      'UPDATE pengajuan_surat SET status = ?, catatan_admin = ? WHERE id = ?',
+      'UPDATE pengajuan_surat SET status = $1, catatan_admin = $2 WHERE id = $3',
       [status, catatan_admin || null, req.params.id]
     );
     res.json({ message: 'Status surat berhasil diperbarui' });
@@ -248,14 +248,14 @@ exports.updateQueue = async (req, res) => {
 
     if (nomor_antrian) {
       const [dup] = await pool.query(
-        'SELECT id FROM pengajuan_antrian WHERE nomor_antrian = ? AND tanggal = (SELECT tanggal FROM pengajuan_antrian WHERE id = ?) AND id != ?',
+        'SELECT id FROM pengajuan_antrian WHERE nomor_antrian = $1 AND tanggal = (SELECT tanggal FROM pengajuan_antrian WHERE id = $2) AND id != $3',
         [nomor_antrian, req.params.id, req.params.id]
       );
       if (dup.length > 0) return res.status(400).json({ message: 'Nomor antrian sudah digunakan untuk tanggal ini' });
     }
 
     await pool.query(
-      'UPDATE pengajuan_antrian SET nomor_antrian = ?, status = ? WHERE id = ?',
+      'UPDATE pengajuan_antrian SET nomor_antrian = $1, status = $2 WHERE id = $3',
       [nomor_antrian || null, status, req.params.id]
     );
     res.json({ message: 'Antrian berhasil diperbarui' });
@@ -285,7 +285,7 @@ exports.updateComplaint = async (req, res) => {
       return res.status(400).json({ message: 'Status tidak valid' });
     }
     await pool.query(
-      'UPDATE pengaduan SET status = ?, balasan_admin = ? WHERE id = ?',
+      'UPDATE pengaduan SET status = $1, balasan_admin = $2 WHERE id = $3',
       [status, balasan_admin || null, req.params.id]
     );
     res.json({ message: 'Aduan berhasil diperbarui' });

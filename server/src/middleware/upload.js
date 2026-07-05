@@ -53,4 +53,10 @@ const uploadBerkas = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 }).array('berkas', 5);
 
-module.exports = { uploadProfil, uploadBerkas };
+const uploadSmartBerkas = multer({
+  storage: berkasStorage,
+  fileFilter: berkasFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).array('berkas', 5);
+
+module.exports = { uploadProfil, uploadBerkas, uploadSmartBerkas };

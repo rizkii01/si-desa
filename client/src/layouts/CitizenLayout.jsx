@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { displayName } from '../utils/formatters';
+import useNotificationCount from '../hooks/useNotificationCount';
 
 export default function CitizenLayout() {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { count: notifCount } = useNotificationCount('warga');
 
   const links = [
     { to: '/warga/dashboard',         label: 'Dashboard',     icon: '📊' },
@@ -15,9 +17,12 @@ export default function CitizenLayout() {
     { to: '/warga/submit-queue',      label: 'Ambil Antrian', icon: '🔢' },
     { to: '/warga/submit-complaint',  label: 'Aduan',         icon: '💬' },
     { to: '/warga/history',           label: 'Riwayat',       icon: '📋' },
+    { to: '/warga/smart-submit-letter', label: 'Surat Pintar', icon: '📝' },
+    { to: '/warga/smart-letters',     label: 'Riwayat Surat', icon: '🗂️' },
+    { to: '/warga/notifications',     label: 'Notifikasi',    icon: '🔔' },
   ];
 
-  const closeSidebar = () => setSidebarOpen(false);
+  const closeSidebar = () => setSidebarOpen(false); 
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -73,6 +78,11 @@ export default function CitizenLayout() {
             >
               <span>{link.icon}</span>
               {link.label}
+              {link.to === '/warga/notifications' && notifCount > 0 && (
+                <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-red-100 bg-red-500 rounded-full">
+                  {notifCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

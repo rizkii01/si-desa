@@ -1,15 +1,20 @@
 const bcrypt = require('bcryptjs');
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 require('dotenv').config();
 
 (async () => {
-  const pool = mysql.createPool({
+  const pool = new Pool({
     host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    database: process.env.DB_NAME || 'desa2'
+    port: Number(process.env.DB_PORT) || 5432,
+    database: process.env.DB_NAME || 'desa2',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    ssl: {
+      rejectUnauthorized: false
+    }
   });
 
-  const [rows] = await pool.query('SELECT id, nik, tanggal_lahir, password_hash FROM users');
+  const { rows } = await pool.query('SELECT id, nik, tanggal_lahir, password_hash FROM users');
   for (const r of rows) {
     const rawDate = r.tanggal_lahir instanceof Date
       ? r.tanggal_lahir.toISOString().split('T')[0]

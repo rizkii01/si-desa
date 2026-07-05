@@ -88,7 +88,7 @@ exports.login = async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      'SELECT * FROM users WHERE nik = ?',
+      'SELECT * FROM users WHERE nik = $1',
       [nik]
     );
 
@@ -118,7 +118,7 @@ exports.login = async (req, res) => {
 exports.me = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      'SELECT id, nik, nama_lengkap, email, no_hp, alamat, tempat_lahir, tanggal_lahir, jenis_kelamin, foto_profil, role, created_at FROM users WHERE id = ?',
+      'SELECT id, nik, nama_lengkap, email, no_hp, alamat, tempat_lahir, tanggal_lahir, jenis_kelamin, foto_profil, role, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
     if (rows.length === 0) {

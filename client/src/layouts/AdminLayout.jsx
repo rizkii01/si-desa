@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Outlet, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { displayName } from "../utils/formatters";
+import useNotificationCount from "../hooks/useNotificationCount";
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const { count: notifCount } = useNotificationCount('admin');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const sidebarLinks = [
@@ -14,6 +16,8 @@ export default function AdminLayout() {
     { to: "/admin/letters", label: "Pengajuan Surat", icon: "📄" },
     { to: "/admin/queues", label: "Antrian", icon: "🔢" },
     { to: "/admin/complaints", label: "Aduan", icon: "💬" },
+    { to: "/admin/smart-letters", label: "Surat Pintar", icon: "📝" },
+    { to: "/admin/notifications", label: "Notifikasi", icon: "🔔" },
   ];
 
   const closeSidebar = () => setSidebarOpen(false);
@@ -49,6 +53,11 @@ export default function AdminLayout() {
             >
               <span>{link.icon}</span>
               {link.label}
+              {link.to === "/admin/notifications" && notifCount > 0 && (
+                <span className="ml-auto flex-shrink-0 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                  {notifCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
