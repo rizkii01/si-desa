@@ -1,13 +1,37 @@
 -- ============================================================
--- Migration: Create tables for Smart Letter & Notification system
--- Database: desa2 (PostgreSQL)
--- Date: 2026-07-01
--- Catatan: Semua controller Node.js menggunakan tabel `users`
---          (bukan `warga` seperti PHP lama)
+-- Migration: Initial Smart Letter Service Schema
+-- Database: PostgreSQL (Supabase)
+-- Date: 2026-07-05
 -- ============================================================
 
 -- --------------------------------------------------------
--- 1. Tabel: letter_number_sequences
+-- Tabel: users (jika belum ada)
+-- Catatan: Jika tabel users sudah ada di database Anda,
+--          abaikan bagian ini
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  nik VARCHAR(16) UNIQUE NOT NULL,
+  nama_lengkap VARCHAR(100) NOT NULL,
+  email VARCHAR(255) UNIQUE,
+  no_hp VARCHAR(20),
+  alamat TEXT,
+  tempat_lahir VARCHAR(100),
+  tanggal_lahir DATE,
+  password_hash VARCHAR(255) NOT NULL,
+  foto_profil VARCHAR(255),
+  jenis_kelamin VARCHAR(20) CHECK (jenis_kelamin IN ('Laki-laki', 'Perempuan')),
+  role VARCHAR(10) NOT NULL DEFAULT 'warga' CHECK (role IN ('admin', 'warga')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+-- 
+-- CREATE INDEX idx_users_nik ON users(nik);
+-- CREATE INDEX idx_users_email ON users(email);
+-- CREATE INDEX idx_users_role ON users(role);
+
+-- --------------------------------------------------------
+-- Tabel: letter_number_sequences
 --    Menyimpan sequence nomor surat per jenis/bulan/tahun
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS letter_number_sequences (
@@ -19,7 +43,7 @@ CREATE TABLE IF NOT EXISTS letter_number_sequences (
 );
 
 -- --------------------------------------------------------
--- 2. Tabel: smart_letter_submissions
+-- Tabel: smart_letter_submissions
 --    Pengajuan surat dinamis (smart letter)
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS smart_letter_submissions (
@@ -43,12 +67,10 @@ CREATE INDEX idx_smart_status ON smart_letter_submissions(status);
 CREATE INDEX idx_smart_jenis_surat ON smart_letter_submissions(jenis_surat);
 CREATE INDEX idx_smart_nomor_referensi ON smart_letter_submissions(nomor_referensi);
 
-ALTER TABLE smart_letter_submissions
-  ADD CONSTRAINT fk_smart_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  ADD CONSTRAINT fk_smart_approved_by FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL;
+-- Constraints handled in earlier migration; removed to avoid duplication
 
 -- --------------------------------------------------------
--- 3. Tabel: smart_letter_files
+-- Tabel: smart_letter_files
 --    File pendukung untuk smart letter submissions
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS smart_letter_files (
@@ -61,13 +83,11 @@ CREATE TABLE IF NOT EXISTS smart_letter_files (
   uploaded_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_files_submission_id ON smart_letter_files(submission_id);
-
-ALTER TABLE smart_letter_files
-  ADD CONSTRAINT fk_files_submission FOREIGN KEY (submission_id) REFERENCES smart_letter_submissions(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_files_submission_id ON smart_letter_files(submission_id);
+-- Constraint fk_files_submission already created in previous migrations; no action needed.
 
 -- --------------------------------------------------------
--- 4. Tabel: notifications
+-- Tabel: notifications
 --    Notifikasi untuk warga dan admin
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS notifications (

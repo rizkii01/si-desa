@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useBlocker } from 'react-router-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 
@@ -20,6 +20,23 @@ export default function EditProfile() {
   });
   const [fotoProfil, setFotoProfil] = useState(null);
   const [fotoPreview, setFotoPreview] = useState('');
+  const [formLoaded, setFormLoaded] = useState(false);
+
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      formLoaded && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      const confirm = window.confirm("Anda memiliki data yang belum disimpan. Yakin ingin meninggalkan halaman ini?");
+      if (confirm) {
+        blocker.proceed();
+      } else {
+        blocker.reset();
+      }
+    }
+  }, [blocker]);
 
   useEffect(() => {
     api.get('/warga/profile')
@@ -37,6 +54,7 @@ export default function EditProfile() {
           alamat: p.alamat || '',
         });
         if (p.foto_profil) setFotoPreview(p.foto_profil);
+        setFormLoaded(true);
       })
       .catch((err) => {
         const msg = err.response?.data?.message || 'Gagal memuat data';

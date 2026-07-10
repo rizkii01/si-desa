@@ -111,6 +111,38 @@ JWT_SECRET=isi-dengan-string-acak-minimal-32-karakter
 JWT_EXPIRES_IN=7d
 ```
 
+#### Jika Menggunakan Supabase PostgreSQL
+
+Jika Anda menggunakan Supabase, copy `DATABASE_URL` dari Dashboard Supabase:
+1. Buka [Supabase Dashboard](https://supabase.com/dashboard)
+2. Pilih project → Project Settings → Database
+3. Scroll ke **Connection string**
+4. Copy dan paste ke `.env`:
+```env
+DATABASE_URL=postgresql://postgres:your-password@db.YOUR_PROJECT_ID.supabase.co:5432/postgres
+```
+
+**Catatan penting:**
+- Direct connection menggunakan **IPv6** - pastikan jaringan Anda support IPv6
+- Jika koneksi gagal, gunakan **Session Pooler** dengan IPv4:
+  ```env
+  DATABASE_URL=postgresql://postgres:your-password@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+  ```
+
+**Troubleshooting DNS:**
+Jika muncul error `ENOTFOUND` atau `DNS resolution failed`, coba:
+1. Ganti DNS server ke Google DNS (8.8.8.8) atau Cloudflare (1.1.1.1)
+2. Run `ipconfig /flushdns` di Windows
+3. Pastikan tidak ada firewall yang memblokir port 5432
+
+Test koneksi:
+```bash
+cd server
+node test-db.js
+```
+JWT_EXPIRES_IN=7d
+```
+
 ### 3. Database Setup
 
 #### Buat database

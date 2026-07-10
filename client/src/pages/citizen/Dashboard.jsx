@@ -25,12 +25,6 @@ export default function Dashboard() {
 
   const cards = [
     {
-      title: 'Total Surat',
-      value: stats?.surat?.length ?? 0,
-      color: 'bg-blue-500',
-      icon: '📄',
-    },
-    {
       title: 'Total Antrian',
       value: stats?.antrian?.length ?? 0,
       color: 'bg-green-500',
@@ -46,11 +40,11 @@ export default function Dashboard() {
 
   const quickActions = [
     {
-      label: 'Ajukan Surat',
+      label: 'Surat Pintar',
       desc: 'Buat permohonan surat baru',
-      path: '/warga/submit-letter',
+      path: '/warga/smart-submit-letter',
       color: 'bg-blue-50 border-blue-200 hover:bg-blue-100',
-      icon: '📄',
+      icon: '📝',
     },
     {
       label: 'Ambil Antrian',
@@ -67,9 +61,9 @@ export default function Dashboard() {
       icon: '💬',
     },
     {
-      label: 'Lihat Riwayat',
-      desc: 'Cek status pengajuan Anda',
-      path: '/warga/history',
+      label: 'Riwayat Surat',
+      desc: 'Cek status smart letter Anda',
+      path: '/warga/smart-letters',
       color: 'bg-orange-50 border-orange-200 hover:bg-orange-100',
       icon: '📋',
     },

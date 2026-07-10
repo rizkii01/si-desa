@@ -3,5 +3,7 @@ node_modules/
 uploads/
 *.log
 .DS_Store
-"uploads/" 
+logs/
+supabase/
+server/logs/
  

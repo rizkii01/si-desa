@@ -1,10 +1,11 @@
 const pool = require('../config/db');
+const logger = require('../utils/logger');
 
 // GET /api/warga/notifications
 // GET /api/admin/notifications
 exports.getNotifications = async (req, res) => {
   try {
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT id, user_id, submission_id, type, title, message, is_read, created_at
        FROM notifications
        WHERE user_id = $1
@@ -14,7 +15,7 @@ exports.getNotifications = async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error(err);
+    logger.error(err.message, { stack: err.stack });
     res.status(500).json({ message: 'Terjadi kesalahan server' });
   }
 };
@@ -23,13 +24,13 @@ exports.getNotifications = async (req, res) => {
 // GET /api/admin/notifications/unread-count
 exports.getUnreadCount = async (req, res) => {
   try {
-    const [result] = await pool.query(
+    const { rows } = await pool.query(
       'SELECT COUNT(*) AS count FROM notifications WHERE user_id = $1 AND is_read = false',
       [req.user.id]
     );
-    res.json({ count: result[0].count });
+    res.json({ count: rows[0].count });
   } catch (err) {
-    console.error(err);
+    logger.error(err.message, { stack: err.stack });
     res.status(500).json({ message: 'Terjadi kesalahan server' });
   }
 };
@@ -38,7 +39,7 @@ exports.getUnreadCount = async (req, res) => {
 // PUT /api/admin/notifications/:id/read
 exports.markAsRead = async (req, res) => {
   try {
-    const [result] = await pool.query(
+    const result = await pool.query(
       'UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2',
       [req.params.id, req.user.id]
     );
@@ -47,7 +48,7 @@ exports.markAsRead = async (req, res) => {
     }
     res.json({ message: 'Notifikasi ditandai sebagai dibaca' });
   } catch (err) {
-    console.error(err);
+    logger.error(err.message, { stack: err.stack });
     res.status(500).json({ message: 'Terjadi kesalahan server' });
   }
 };
@@ -62,7 +63,7 @@ exports.markAllAsRead = async (req, res) => {
     );
     res.json({ message: 'Semua notifikasi ditandai sebagai dibaca' });
   } catch (err) {
-    console.error(err);
+    logger.error(err.message, { stack: err.stack });
     res.status(500).json({ message: 'Terjadi kesalahan server' });
   }
 };

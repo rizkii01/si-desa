@@ -1,10 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
-
-const loginAttempts = new Map();
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const logger = require('../utils/logger');
 
 const fotoUrl = (filename) => (filename ? `/uploads/profil/${filename}` : null);
 
@@ -20,84 +17,40 @@ const toUserResponse = (user) => ({
   jenis_kelamin: user.jenis_kelamin || null,
   foto_profil: fotoUrl(user.foto_profil),
   role: user.role,
+  must_change_password: user.must_change_password,
   created_at: user.created_at,
 });
-
-const getAttemptKey = (req, nik) => `${req.ip}:${nik || 'unknown'}`;
-
-const isBlocked = (key) => {
-  const attempt = loginAttempts.get(key);
-  if (!attempt) return false;
-  if (Date.now() - attempt.firstAttemptAt > LOGIN_WINDOW_MS) {
-    loginAttempts.delete(key);
-    return false;
-  }
-  return attempt.count >= MAX_LOGIN_ATTEMPTS;
-};
-
-const recordFailedAttempt = (key) => {
-  const now = Date.now();
-  const attempt = loginAttempts.get(key);
-  if (!attempt || now - attempt.firstAttemptAt > LOGIN_WINDOW_MS) {
-    loginAttempts.set(key, { count: 1, firstAttemptAt: now });
-    return;
-  }
-  attempt.count += 1;
-};
-
-const parseDate = (str) => {
-  const formats = [
-    /^(\d{4})-(\d{2})-(\d{2})$/,
-    /^(\d{2})-(\d{2})-(\d{4})$/,
-    /^(\d{4})\/(\d{2})\/(\d{2})$/,
-    /^(\d{2})\/(\d{2})\/(\d{4})$/,
-    /^(\d{4})(\d{2})(\d{2})$/,
-    /^(\d{2})(\d{2})(\d{4})$/,
-  ];
-  for (const fmt of formats) {
-    const m = str.match(fmt);
-    if (m) {
-      const [_, a, b, c] = m;
-      if (fmt === formats[0] || fmt === formats[2] || fmt === formats[4]) {
-        return `${a}-${b}-${c}`;
-      }
-      return `${c}-${b}-${a}`;
-    }
-  }
-  return null;
-};
 
 exports.login = async (req, res) => {
   try {
     const { nik, password } = req.body;
-    const attemptKey = getAttemptKey(req, nik);
 
-    if (!nik || !password) {
-      return res.status(400).json({ message: 'NIK dan Tanggal Lahir harus diisi' });
-    }
-    if (!/^\d{16}$/.test(nik)) {
-      return res.status(400).json({ message: 'NIK harus 16 digit angka' });
-    }
-
-    const tanggalLahir = parseDate(password);
-    if (!tanggalLahir) {
-      return res.status(400).json({ message: 'Format tanggal lahir tidak valid' });
-    }
-    if (isBlocked(attemptKey)) {
-      return res.status(429).json({ message: 'Terlalu banyak percobaan login. Coba lagi beberapa menit lagi' });
-    }
-
-    const [rows] = await pool.query(
+    const {rows} = await pool.query(
       'SELECT * FROM users WHERE nik = $1',
       [nik]
     );
 
-    if (rows.length === 0 || !(await bcrypt.compare(tanggalLahir, rows[0].password_hash))) {
-      recordFailedAttempt(attemptKey);
-      return res.status(401).json({ message: 'NIK atau Tanggal Lahir tidak ditemukan' });
+    if (rows.length === 0 || !(await bcrypt.compare(password, rows[0].password_hash))) {
+      return res.status(401).json({ message: 'NIK atau password salah' });
     }
 
     const user = rows[0];
+
+    if (!user.is_active) {
+      return res.status(403).json({ message: 'Akun Anda telah dinonaktifkan. Hubungi admin desa.' });
+    }
+
+    if (user.tanggal_lahir) {
+      const today = new Date();
+      const birth = new Date(user.tanggal_lahir);
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+      if (age < 17) {
+        return res.status(403).json({ message: 'Akun hanya bisa diakses oleh warga berusia 17 tahun ke atas.' });
+      }
+    }
+
     const token = jwt.sign(
       { id: user.id, nik: user.nik, nama: user.nama_lengkap, role: user.role },
       process.env.JWT_SECRET,
@@ -108,17 +61,16 @@ exports.login = async (req, res) => {
       token,
       user: toUserResponse(user),
     });
-    loginAttempts.delete(attemptKey);
   } catch (err) {
-    console.error('LOGIN ERROR:', err.message, err.stack);
-    res.status(500).json({ message: 'Terjadi kesalahan server' });
+    logger.error('LOGIN ERROR: ' + err.message, { stack: err.stack });
+    res.status(500).json({ message: 'Gagal login, coba lagi', error: err.message });
   }
 };
 
 exports.me = async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      'SELECT id, nik, nama_lengkap, email, no_hp, alamat, tempat_lahir, tanggal_lahir, jenis_kelamin, foto_profil, role, created_at FROM users WHERE id = $1',
+    const { rows } = await pool.query(
+      'SELECT id, nik, nama_lengkap, email, no_hp, alamat, tempat_lahir, tanggal_lahir, jenis_kelamin, foto_profil, role, must_change_password, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
     if (rows.length === 0) {
@@ -126,7 +78,7 @@ exports.me = async (req, res) => {
     }
     res.json(toUserResponse(rows[0]));
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Terjadi kesalahan server' });
+    logger.error(err.message, { stack: err.stack });
+    res.status(500).json({ message: 'Gagal memuat profil', error: err.message });
   }
 };

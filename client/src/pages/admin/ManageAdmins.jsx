@@ -15,6 +15,7 @@ export default function ManageAdmins() {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [deactivateId, setDeactivateId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
@@ -53,13 +54,14 @@ export default function ManageAdmins() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDeactivate = async (id) => {
     try {
-      await api.delete(`/admin/admins/${id}`);
-      toast.success('Admin berhasil dihapus');
+      await api.put(`/admin/admins/${id}/deactivate`);
+      toast.success('Admin berhasil dinonaktifkan');
+      setDeactivateId(null);
       fetchAdmins();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Gagal menghapus admin');
+      toast.error(err.response?.data?.message || 'Gagal menonaktifkan admin');
     }
   };
 
@@ -108,10 +110,10 @@ export default function ManageAdmins() {
                   <td className="px-4 py-3">{a.no_hp || '-'}</td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => handleDelete(a.id)}
+                      onClick={() => setDeactivateId(a.id)}
                       className="text-red-600 hover:underline text-sm"
                     >
-                      Delete
+                      Nonaktifkan
                     </button>
                   </td>
                 </tr>
@@ -163,6 +165,23 @@ export default function ManageAdmins() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {deactivateId && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm">
+            <h2 className="text-lg font-semibold mb-2">Konfirmasi Nonaktifkan</h2>
+            <p className="text-gray-600 text-sm mb-4">Apakah Anda yakin ingin menonaktifkan admin ini? Admin tidak akan bisa login sampai diaktifkan kembali.</p>
+            <div className="flex gap-3">
+              <button onClick={() => handleDeactivate(deactivateId)} className="flex-1 bg-red-600 text-white py-2 rounded-lg font-medium hover:bg-red-700 transition text-sm">
+                Nonaktifkan
+              </button>
+              <button onClick={() => setDeactivateId(null)} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition text-sm">
+                Batal
+              </button>
+            </div>
           </div>
         </div>
       )}

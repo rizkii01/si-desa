@@ -1,10 +1,10 @@
 const { Router } = require('express');
 const { verifyToken, roleCheck } = require('../middleware/auth');
+const { createResidentRules } = require('../middleware/validate');
 const {
   getDashboard,
-  getResidents, getResident, createResident, updateResident, deleteResident,
-  getAdmins, createAdmin, deleteAdmin,
-  getLetters, updateLetterStatus,
+  getResidents, getResident, createResident, updateResident, deactivateResident,
+  getAdmins, createAdmin, deactivateAdmin,
   getQueues, updateQueue,
   getComplaints, updateComplaint,
 } = require('../controllers/adminController');
@@ -22,16 +22,13 @@ router.get('/dashboard', getDashboard);
 
 router.get('/residents', getResidents);
 router.get('/residents/:id', getResident);
-router.post('/residents', createResident);
+router.post('/residents', createResidentRules, createResident);
 router.put('/residents/:id', updateResident);
-router.delete('/residents/:id', deleteResident);
+router.put('/residents/:id/deactivate', deactivateResident);
 
 router.get('/admins', getAdmins);
-router.post('/admins', createAdmin);
-router.delete('/admins/:id', deleteAdmin);
-
-router.get('/submissions/letters', getLetters);
-router.put('/submissions/letters/:id/status', updateLetterStatus);
+router.post('/admins', createResidentRules, createAdmin);
+router.put('/admins/:id/deactivate', deactivateAdmin);
 
 router.get('/submissions/queues', getQueues);
 router.put('/submissions/queues/:id', updateQueue);

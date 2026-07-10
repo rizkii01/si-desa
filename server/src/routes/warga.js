@@ -1,9 +1,10 @@
 const { Router } = require('express');
 const { verifyToken, roleCheck } = require('../middleware/auth');
-const { uploadProfil, uploadBerkas, uploadSmartBerkas } = require('../middleware/upload');
+const { uploadProfil, uploadBerkas } = require('../middleware/upload');
+const { updateProfileRules, changePasswordRules } = require('../middleware/validate');
 const {
   getProfile, updateProfile, uploadPhoto,
-  submitLetter, submitQueue, submitComplaint, getHistory,
+  submitQueue, submitComplaint, getHistory, changePassword,
 } = require('../controllers/wargaController');
 const {
   submitSmartLetter,
@@ -21,21 +22,21 @@ const router = Router();
 router.use(verifyToken, roleCheck('warga'));
 
 router.get('/profile', getProfile);
-router.put('/profile', updateProfile);
+router.put('/profile', updateProfileRules, updateProfile);
 router.post('/profile/photo', uploadProfil, uploadPhoto);
+router.put('/change-password', changePasswordRules, changePassword);
 
-router.post('/submissions/letters', uploadBerkas, submitLetter);
 router.post('/submissions/queues', submitQueue);
 router.post('/submissions/complaints', submitComplaint);
 router.get('/submissions/history', getHistory);
 
-router.post('/smart-letters', uploadSmartBerkas, submitSmartLetter);
+router.post('/smart-letters', uploadBerkas, submitSmartLetter);
 router.get('/smart-letters', getSmartLetters);
 router.get('/smart-letters/:id', getSmartLetterDetail);
 
 router.get('/notifications', getNotifications);
 router.get('/notifications/unread-count', getUnreadCount);
-router.put('/notifications/:id/read', markAsRead);
 router.put('/notifications/read-all', markAllAsRead);
+router.put('/notifications/:id/read', markAsRead);
 
 module.exports = router;

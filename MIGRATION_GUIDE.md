@@ -78,8 +78,8 @@ npm install
    - PostgreSQL: `result.rowCount`, `result.rows[0].id`
 
 3. **Array destructuring:**
-   - MySQL: `const [rows] = await pool.query(...)` → `rows` adalah array
-   - PostgreSQL: `const [rows] = await pool.query(...)` → `rows` adalah array
+   - MySQL: `const { row } = await pool.query(...)` → `rows` adalah array
+   - PostgreSQL: `const {row} = await pool.query(...)` → `rows` adalah array
 
 4. **Transaction:**
    - MySQL: `pool.getConnection()` → `conn.beginTransaction()` → `conn.commit()` → `conn.release()`
@@ -93,12 +93,12 @@ npm install
 
 ### Sebelum (MySQL):
 ```javascript
-const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+const {row} = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
 ```
 
 ### Sesudah (PostgreSQL):
 ```javascript
-const [rows] = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+const {row} = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
 ```
 
 ### Transaction MySQL:

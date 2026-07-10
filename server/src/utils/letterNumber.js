@@ -37,16 +37,16 @@ async function generateLetterNumber(conn, jenisSurat, approvalDate) {
   );
   
   // Get the updated sequence number
-  const [seq] = await conn.query(
+  const { rows: seq } = await conn.query(
     `SELECT sequence_number FROM letter_number_sequences
      WHERE jenis_surat = $1 AND bulan = $2 AND tahun = $3`,
     [jenisSurat, bulan, tahun]
   );
-  
+
   if (!seq || !seq.length || !seq[0].sequence_number) {
     throw new Error('Failed to retrieve sequence number');
   }
-  
+
   // Format the number: zero-pad sequence to 3 digits
   const nnn = String(seq[0].sequence_number).padStart(3, '0');
   

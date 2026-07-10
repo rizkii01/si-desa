@@ -27,9 +27,7 @@ export default function Dashboard() {
 
   const cards = [
     { label: "Total Warga", value: data.total_warga, color: "bg-blue-500" },
-    { label: "Total Surat", value: data.surat?.total ?? 0, color: "bg-indigo-500" },
-    { label: "Surat Pending", value: data.surat?.pending ?? 0, color: "bg-yellow-500" },
-    { label: "Surat Diproses", value: data.surat?.diproses ?? 0, color: "bg-orange-500" },
+    { label: "Surat Pintar Pending", value: data.smart_letter_pending ?? 0, color: "bg-teal-500" },
     { label: "Antrian Pending", value: data.antrian_pending ?? 0, color: "bg-purple-500" },
     { label: "Pengaduan Aktif", value: data.pengaduan_aktif ?? 0, color: "bg-red-500" },
   ];

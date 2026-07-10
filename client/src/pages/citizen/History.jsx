@@ -4,7 +4,6 @@ import toast from 'react-hot-toast';
 import StatusBadge from '../../components/StatusBadge';
 
 const TABS = [
-  { key: 'surat', label: 'Surat' },
   { key: 'antrian', label: 'Antrian' },
   { key: 'pengaduan', label: 'Pengaduan' },
 ];
@@ -13,7 +12,7 @@ export default function History() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('surat');
+  const [activeTab, setActiveTab] = useState('antrian');
 
   useEffect(() => {
     api.get('/warga/submissions/history')
@@ -69,54 +68,6 @@ export default function History() {
           </button>
         ))}
       </div>
-
-      {activeTab === 'surat' && (
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          {data.surat?.length === 0 ? (
-            <p className="text-gray-500 text-center py-10">Belum ada data surat.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600">
-                  <tr>
-                    <th className="text-left px-4 py-3 font-medium">ID</th>
-                    <th className="text-left px-4 py-3 font-medium">Jenis Layanan</th>
-                    <th className="text-left px-4 py-3 font-medium">Keperluan</th>
-                    <th className="text-left px-4 py-3 font-medium">Status</th>
-                    <th className="text-left px-4 py-3 font-medium">Catatan Admin</th>
-                    <th className="text-left px-4 py-3 font-medium">Tanggal</th>
-                    <th className="text-left px-4 py-3 font-medium">Berkas</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {data.surat.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-mono text-xs">{item.id}</td>
-                      <td className="px-4 py-3">{item.jenis_layanan}</td>
-                      <td className="px-4 py-3 max-w-[200px] truncate">{item.keperluan}</td>
-                      <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
-                      <td className="px-4 py-3 text-gray-500">{item.catatan_admin || '-'}</td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">{item.tanggal_pengajuan ? new Date(item.tanggal_pengajuan).toLocaleDateString('id-ID') : '-'}</td>
-                      <td className="px-4 py-3">
-                        {item.berkas?.length > 0 ? (
-                          <a
-                            href={item.berkas[0]}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            Download
-                          </a>
-                        ) : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
 
       {activeTab === 'antrian' && (
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
