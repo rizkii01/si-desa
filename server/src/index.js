@@ -22,6 +22,8 @@ app.use(helmet());
 // CORS - restrict to allowed origins
 app.use(cors({
   origin: [
+    'https://si-desa.my.id',
+    'https://www.si-desa.my.id',
     'https://si-desa-roan.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
