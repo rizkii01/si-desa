@@ -63,7 +63,7 @@ exports.login = async (req, res) => {
     });
   } catch (err) {
     logger.error('LOGIN ERROR: ' + err.message, { stack: err.stack });
-    res.status(500).json({ message: 'Gagal login, coba lagi', error: err.message });
+    res.status(500).json({ message: 'Gagal login, coba lagi' });
   }
 };
 
@@ -79,6 +79,6 @@ exports.me = async (req, res) => {
     res.json(toUserResponse(rows[0]));
   } catch (err) {
     logger.error(err.message, { stack: err.stack });
-    res.status(500).json({ message: 'Gagal memuat profil', error: err.message });
+    res.status(500).json({ message: 'Gagal memuat profil' });
   }
 };

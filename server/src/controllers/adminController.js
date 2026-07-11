@@ -63,7 +63,14 @@ exports.getResidents = async (req, res) => {
 
 exports.getResident = async (req, res) => {
   try {
-    const { rows } = await pool.query("SELECT * FROM users WHERE id = $1 AND role = 'warga'", [req.params.id]);
+    const { rows } = await pool.query(
+      `SELECT id, nik, nama_lengkap, email, no_hp, alamat, tempat_lahir, tanggal_lahir,
+              jenis_kelamin, no_kk, rt, rw, status_keluarga, agama, pekerjaan,
+              pendidikan_terakhir, status_perkawinan, nama_ayah, nama_ibu,
+              kewarganegaraan, is_active, must_change_password, created_at
+       FROM users WHERE id = $1 AND role = 'warga'`,
+      [req.params.id]
+    );
     if (rows.length === 0) return res.status(404).json({ message: 'Warga tidak ditemukan' });
     res.json(rows[0]);
   } catch (err) {

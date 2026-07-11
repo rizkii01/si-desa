@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import StatusBadge from "../../components/StatusBadge";
 import { SkeletonCard } from "../../components/Skeleton";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export default function SmartLetterHistory() {
   const [letters, setLetters] = useState([]);

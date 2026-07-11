@@ -4,7 +4,7 @@ import api from "../../api/axios";
 import toast from "react-hot-toast";
 import StatusBadge from "../../components/StatusBadge";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export default function SmartLetterDetail() {
   const { id } = useParams();

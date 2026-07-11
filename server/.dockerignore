@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.env.production
+logs/
+*.log
+.DS_Store
+.git
+.gitignore
+.vscode
+.idea
+uploads/
+server/debug_login.js

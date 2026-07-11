@@ -6,4 +6,13 @@ uploads/
 logs/
 supabase/
 server/logs/
- 
+server/debug_login.js
+
+# Docker
+docker-compose.override.yml
+*.env.local
+*.env.production
+
+# Certbot
+nginx/ssl/
+nginx/certbot/
