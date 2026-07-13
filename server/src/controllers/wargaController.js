@@ -4,6 +4,7 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 const { logActivity } = require('../utils/activityLogger');
+const { PROFIL_DIR } = require('../config/uploads');
 
 const fotoUrl = (filename) => (filename ? `/uploads/profil/${filename}` : null);
 
@@ -56,7 +57,7 @@ exports.uploadPhoto = async (req, res) => {
 
     const { rows } = await pool.query('SELECT foto_profil FROM users WHERE id = $1', [req.user.id]);
     if (rows.length > 0 && rows[0].foto_profil) {
-      const oldPath = path.join(__dirname, '..', '..', '..', 'uploads', 'profil', rows[0].foto_profil);
+      const oldPath = path.join(PROFIL_DIR, rows[0].foto_profil);
       if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
     }
 

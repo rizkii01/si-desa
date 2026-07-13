@@ -8,6 +8,7 @@ const { generateReferenceNumber } = require('../utils/referenceNumber');
 const { generateLetterNumber } = require('../utils/letterNumber');
 const { LETTER_SCHEMAS } = require('../utils/letterSchemas');
 const { logActivity } = require('../utils/activityLogger');
+const { PDF_DIR } = require('../config/uploads');
 
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -303,10 +304,9 @@ exports.approveSmartLetter = async (req, res) => {
     const pdfBuffer = await generatePdf(sub[0].jenis_surat, nomorSurat, wargaData, formData);
     
     // Save PDF to uploads/smart/pdfs
-    const pdfDir = path.join(__dirname, '..', '..', '..', 'uploads', 'smart', 'pdfs');
-    await fs.promises.mkdir(pdfDir, { recursive: true });
+    await fs.promises.mkdir(PDF_DIR, { recursive: true });
     const pdfFilename = `letter_${sub[0].id}_${Date.now()}.pdf`;
-    const pdfPath = path.join(pdfDir, pdfFilename);
+    const pdfPath = path.join(PDF_DIR, pdfFilename);
     await fs.promises.writeFile(pdfPath, pdfBuffer);
     const relativePdfPath = `/uploads/smart/pdfs/${pdfFilename}`;
 

@@ -5,12 +5,16 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const logger = require('./utils/logger');
+const { UPLOAD_DIR } = require('./config/uploads');
 const authRoutes = require('./routes/auth');
 const wargaRoutes = require('./routes/warga');
 const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Trust proxy (nginx reverse proxy)
+app.set('trust proxy', 1);
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET wajib diisi di file .env');
@@ -44,7 +48,7 @@ app.use(globalLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
+app.use('/uploads', express.static(UPLOAD_DIR));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/warga', wargaRoutes);

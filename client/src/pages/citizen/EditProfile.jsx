@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useBlocker } from 'react-router-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -21,10 +21,15 @@ export default function EditProfile() {
   const [fotoProfil, setFotoProfil] = useState(null);
   const [fotoPreview, setFotoPreview] = useState('');
   const [formLoaded, setFormLoaded] = useState(false);
+  const originalFormRef = useRef(null);
+
+  const isDirty = formLoaded && originalFormRef.current !== null && (
+    JSON.stringify(form) !== JSON.stringify(originalFormRef.current) || fotoProfil !== null
+  );
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      formLoaded && currentLocation.pathname !== nextLocation.pathname
+      isDirty && currentLocation.pathname !== nextLocation.pathname
   );
 
   useEffect(() => {
@@ -48,12 +53,14 @@ export default function EditProfile() {
           jenis_kelamin: p.jenis_kelamin || '',
           tanggal_lahir: p.tanggal_lahir || '',
         });
-        setForm({
+        const profileData = {
           email: p.email || '',
           no_hp: p.no_hp || '',
           alamat: p.alamat || '',
-        });
+        };
+        setForm(profileData);
         if (p.foto_profil) setFotoPreview(p.foto_profil);
+        originalFormRef.current = profileData;
         setFormLoaded(true);
       })
       .catch((err) => {
