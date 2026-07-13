@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
 const logger = require('../utils/logger');
+const { logActivity } = require('../utils/activityLogger');
 
 exports.getDashboard = async (req, res) => {
   try {
@@ -186,6 +187,17 @@ exports.deactivateResident = async (req, res) => {
   }
 };
 
+exports.activateResident = async (req, res) => {
+  try {
+    const result = await pool.query("UPDATE users SET is_active = true WHERE id = $1 AND role = 'warga'", [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ message: 'Warga tidak ditemukan' });
+    res.json({ message: 'Akun warga berhasil diaktifkan kembali' });
+  } catch (err) {
+    logger.error(err.message, { stack: err.stack });
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+};
+
 exports.getAdmins = async (req, res) => {
   try {
     const { rows } = await pool.query("SELECT id, nik, nama_lengkap, email, no_hp, created_at FROM users WHERE role = 'admin' ORDER BY created_at DESC");
@@ -246,24 +258,31 @@ exports.getQueues = async (req, res) => {
 
 exports.updateQueue = async (req, res) => {
   try {
-    const { nomor_antrian, status } = req.body;
+    const { status } = req.body;
     const validStatus = ['Pending', 'Terverifikasi', 'Selesai'];
     if (!validStatus.includes(status)) {
       return res.status(400).json({ message: 'Status tidak valid' });
     }
 
-    if (nomor_antrian) {
-      const { rows: dup } = await pool.query(
-        'SELECT id FROM pengajuan_antrian WHERE nomor_antrian = $1 AND tanggal = (SELECT tanggal FROM pengajuan_antrian WHERE id = $2) AND id != $3',
-        [nomor_antrian, req.params.id, req.params.id]
-      );
-      if (dup.length > 0) return res.status(400).json({ message: 'Nomor antrian sudah digunakan untuk tanggal ini' });
+    const { rows } = await pool.query(
+      'UPDATE pengajuan_antrian SET status = $1 WHERE id = $2 RETURNING nik, nama_lengkap, tanggal, jenis_layanan, nomor_antrian',
+      [status, req.params.id]
+    );
+
+    if (rows.length > 0) {
+      const q = rows[0];
+      const { rows: userRows } = await pool.query("SELECT id FROM users WHERE nik = $1 AND role = 'warga'", [q.nik]);
+      if (userRows.length > 0) {
+        const statusLabel = status === 'Terverifikasi' ? 'Diverifikasi' : status === 'Selesai' ? 'Selesai' : status;
+        await pool.query(
+          'INSERT INTO notifications (user_id, type, title, message) VALUES ($1, $2, $3, $4)',
+          [userRows[0].id, 'queue_update', `Antrian ${statusLabel}`, `Antrian Anda No. ${q.nomor_antrian} (${q.jenis_layanan}) tanggal ${q.tanggal} telah ${statusLabel}.`]
+        );
+      }
+      await logActivity(req.user.id, 'queue_updated', 'queue', parseInt(req.params.id),
+        `Mengubah status antrian No. ${q.nomor_antrian} (${q.jenis_layanan}) menjadi ${status}`);
     }
 
-    await pool.query(
-      'UPDATE pengajuan_antrian SET nomor_antrian = $1, status = $2 WHERE id = $3',
-      [nomor_antrian || null, status, req.params.id]
-    );
     res.json({ message: 'Antrian berhasil diperbarui' });
   } catch (err) {
     logger.error(err.message, { stack: err.stack });
@@ -291,10 +310,28 @@ exports.updateComplaint = async (req, res) => {
     if (!validStatus.includes(status)) {
       return res.status(400).json({ message: 'Status tidak valid' });
     }
-    await pool.query(
-      'UPDATE pengaduan SET status = $1, balasan_admin = $2 WHERE id = $3',
+
+    const { rows } = await pool.query(
+      'UPDATE pengaduan SET status = $1, balasan_admin = $2 WHERE id = $3 RETURNING nik, nama_lengkap, isi_aduan',
       [status, balasan_admin || null, req.params.id]
     );
+
+    if (rows.length > 0 && balasan_admin) {
+      const p = rows[0];
+      const { rows: userRows } = await pool.query("SELECT id FROM users WHERE nik = $1 AND role = 'warga'", [p.nik]);
+      if (userRows.length > 0) {
+        await pool.query(
+          'INSERT INTO notifications (user_id, type, title, message) VALUES ($1, $2, $3, $4)',
+          [userRows[0].id, 'complaint_reply', 'Balasan Pengaduan', `Admin membalas pengaduan Anda: "${balasan_admin.slice(0, 100)}"`]
+        );
+      }
+      await logActivity(req.user.id, 'complaint_replied', 'complaint', parseInt(req.params.id),
+        `Membalas pengaduan dari "${rows[0].nama_lengkap}"`);
+    } else if (rows.length > 0) {
+      await logActivity(req.user.id, 'complaint_status_updated', 'complaint', parseInt(req.params.id),
+        `Mengubah status pengaduan menjadi ${status}`);
+    }
+
     res.json({ message: 'Aduan berhasil diperbarui' });
   } catch (err) {
     logger.error(err.message, { stack: err.stack });

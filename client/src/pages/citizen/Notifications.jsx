@@ -45,8 +45,12 @@ export default function Notifications() {
 
   function handleClick(n) {
     if (!n.is_read) markAsRead(n.id);
-    if (n.submission_id) {
-      navigate(`/warga/smart-letters`, { state: { highlightId: n.submission_id } });
+    if (n.type === 'queue_update' || n.type === 'new_queue') {
+      navigate('/warga/history');
+    } else if (n.type === 'complaint_reply' || n.type === 'new_complaint') {
+      navigate('/warga/history');
+    } else if (n.submission_id) {
+      navigate('/warga/smart-letters', { state: { highlightId: n.submission_id } });
     }
   }
 

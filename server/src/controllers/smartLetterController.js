@@ -7,6 +7,7 @@ const { validateSmartLetterFields } = require('../utils/letterValidation');
 const { generateReferenceNumber } = require('../utils/referenceNumber');
 const { generateLetterNumber } = require('../utils/letterNumber');
 const { LETTER_SCHEMAS } = require('../utils/letterSchemas');
+const { logActivity } = require('../utils/activityLogger');
 
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -101,6 +102,11 @@ exports.submitSmartLetter = async (req, res) => {
     }
 
     await client.query('COMMIT');
+
+    const schemaName = LETTER_SCHEMAS[jenis_surat]?.label || jenis_surat;
+    await logActivity(req.user.id, 'letter_submitted', 'smart_letter', submissionId,
+      `Mengajukan ${schemaName} (${nomorReferensi})`);
+
     res.status(201).json({
       message: 'Pengajuan berhasil dikirim',
       nomor_referensi: nomorReferensi,
@@ -290,7 +296,7 @@ exports.approveSmartLetter = async (req, res) => {
     };
 
     const approvalDate = new Date();
-    const nomorSurat = await generateLetterNumber(client, sub[0].jenis_surat, approvalDate);
+    const nomorSurat = req.body.nomor_surat || await generateLetterNumber(client, sub[0].jenis_surat, approvalDate);
 
     // Generate PDF using PDFKit official rendering
     const formData = typeof sub[0].form_data === 'string' ? JSON.parse(sub[0].form_data) : sub[0].form_data;
@@ -323,6 +329,11 @@ exports.approveSmartLetter = async (req, res) => {
     );
 
     await client.query('COMMIT');
+
+    const approveSchema = LETTER_SCHEMAS[sub[0].jenis_surat];
+    await logActivity(req.user.id, 'letter_approved', 'smart_letter', sub[0].id,
+      `Menyetujui ${approveSchema?.label || sub[0].jenis_surat} untuk ${sub[0].nama_lengkap} (${nomorSurat})`);
+
     res.json({ message: 'Pengajuan disetujui', nomor_surat: nomorSurat, pdf_url: relativePdfPath });
   } catch (err) {
     if (client) await client.query('ROLLBACK');
@@ -376,6 +387,11 @@ exports.rejectSmartLetter = async (req, res) => {
     );
 
     await client.query('COMMIT');
+
+    const rejectSchema = LETTER_SCHEMAS[sub[0].jenis_surat];
+    await logActivity(req.user.id, 'letter_rejected', 'smart_letter', sub[0].id,
+      `Menolak ${rejectSchema?.label || sub[0].jenis_surat} untuk warga (${alasan_penolakan.slice(0, 100)})`);
+
     res.json({ message: 'Pengajuan ditolak', alasan_penolakan });
   } catch (err) {
     if (client) await client.query('ROLLBACK');

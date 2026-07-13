@@ -12,6 +12,7 @@ export default function SmartSubmitLetter() {
   const [formData, setFormData] = useState({});
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const schema = selectedType ? LETTER_SCHEMAS[selectedType] : null;
   const hasFormData = Object.keys(formData).length > 0 || files.length > 0;
@@ -34,11 +35,17 @@ export default function SmartSubmitLetter() {
 
   function handleChange(fieldKey, value) {
     setFormData((prev) => ({ ...prev, [fieldKey]: value }));
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[fieldKey];
+      return next;
+    });
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
+    setFieldErrors({});
     try {
       const fd = new FormData();
       fd.append("jenis_surat", selectedType);
@@ -50,7 +57,22 @@ export default function SmartSubmitLetter() {
       toast.success("Pengajuan berhasil dikirim!");
       navigate("/warga/smart-letters");
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Gagal mengirim pengajuan");
+      const serverErrors = err?.response?.data?.errors;
+      if (Array.isArray(serverErrors) && serverErrors.length > 0) {
+        const errorMap = {};
+        serverErrors.forEach((msg) => {
+          const match = msg.match(/Field '(.+?)'/);
+          if (match) {
+            const schema = LETTER_SCHEMAS[selectedType];
+            const field = schema?.fields?.find((f) => f.label === match[1]);
+            if (field) errorMap[field.key] = msg;
+          }
+        });
+        setFieldErrors(errorMap);
+        toast.error("Ada field yang belum terisi dengan benar");
+      } else {
+        toast.error(err?.response?.data?.message || "Gagal mengirim pengajuan");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -103,7 +125,7 @@ export default function SmartSubmitLetter() {
         <DynamicLetterForm
           schema={schema}
           values={formData}
-          errors={{}}
+          errors={fieldErrors}
           onChange={handleChange}
         />
 

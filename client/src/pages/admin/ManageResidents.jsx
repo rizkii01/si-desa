@@ -24,6 +24,7 @@ export default function ManageResidents() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deactivateId, setDeactivateId] = useState(null);
+  const [activateId, setActivateId] = useState(null);
 
   const [filterRt, setFilterRt] = useState('');
   const [filterRw, setFilterRw] = useState('');
@@ -90,6 +91,17 @@ export default function ManageResidents() {
       fetchResidents();
     } catch {
       toast.error('Gagal menonaktifkan akun');
+    }
+  };
+
+  const handleActivate = async (id) => {
+    try {
+      await api.put(`/admin/residents/${id}/activate`);
+      toast.success('Akun warga berhasil diaktifkan kembali');
+      setActivateId(null);
+      fetchResidents();
+    } catch {
+      toast.error('Gagal mengaktifkan akun');
     }
   };
 
@@ -181,8 +193,10 @@ export default function ManageResidents() {
                   <td className="px-4 py-3 space-x-2">
                     <button onClick={() => navigate(`/admin/residents/${r.id}`)} className="text-blue-600 hover:underline text-sm">Detail</button>
                     <button onClick={() => navigate(`/admin/residents/${r.id}`)} className="text-green-600 hover:underline text-sm">Edit</button>
-                    {r.is_active && (
+                    {r.is_active ? (
                       <button onClick={() => setDeactivateId(r.id)} className="text-red-600 hover:underline text-sm">Nonaktifkan</button>
+                    ) : (
+                      <button onClick={() => setActivateId(r.id)} className="text-green-600 hover:underline text-sm font-medium">Aktifkan</button>
                     )}
                   </td>
                 </tr>
@@ -312,6 +326,24 @@ export default function ManageResidents() {
                 Nonaktifkan
               </button>
               <button onClick={() => setDeactivateId(null)} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition text-sm">
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Aktifkan */}
+      {activateId && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm">
+            <h2 className="text-lg font-semibold mb-2">Konfirmasi Aktifkan</h2>
+            <p className="text-gray-600 text-sm mb-4">Apakah Anda yakin ingin mengaktifkan kembali akun warga ini? Warga akan bisa login setelah diaktifkan.</p>
+            <div className="flex gap-3">
+              <button onClick={() => handleActivate(activateId)} className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition text-sm">
+                Aktifkan
+              </button>
+              <button onClick={() => setActivateId(null)} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition text-sm">
                 Batal
               </button>
             </div>

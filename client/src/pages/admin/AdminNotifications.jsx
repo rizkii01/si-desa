@@ -46,6 +46,10 @@ export default function AdminNotifications() {
     if (!n.is_read) markAsRead(n.id);
     if (n.submission_id && n.type === "new_submission") {
       navigate(`/admin/smart-letters/${n.submission_id}`);
+    } else if (n.type === "new_queue") {
+      navigate('/admin/queues');
+    } else if (n.type === "new_complaint") {
+      navigate('/admin/complaints');
     }
   }
 

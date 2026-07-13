@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
+const { logActivity } = require('../utils/activityLogger');
 
 const fotoUrl = (filename) => (filename ? `/uploads/profil/${filename}` : null);
 
@@ -40,6 +41,8 @@ exports.updateProfile = async (req, res) => {
       'UPDATE users SET email = $1, no_hp = $2, alamat = $3 WHERE id = $4',
       [email || null, no_hp || null, alamat || null, req.user.id]
     );
+    await logActivity(req.user.id, 'profile_updated', 'profile', req.user.id,
+      'Memperbarui data profil (email, no HP, alamat)');
     res.json({ message: 'Profil berhasil diperbarui' });
   } catch (err) {
     logger.error(err.message, { stack: err.stack });
@@ -89,11 +92,28 @@ exports.submitQueue = async (req, res) => {
       return res.status(400).json({ message: 'Anda sudah memiliki antrian pending di tanggal tersebut' });
     }
 
-    await pool.query(
-      'INSERT INTO pengajuan_antrian (nik, nama_lengkap, tanggal, jenis_layanan, status) VALUES ($1, $2, $3, $4, $5)',
-      [user.nik, user.nama_lengkap, tanggal, jenis_layanan, 'Pending']
+    const { rows: countRows } = await pool.query(
+      'SELECT COALESCE(MAX(nomor_antrian), 0) + 1 AS next_nomor FROM pengajuan_antrian WHERE tanggal = $1',
+      [tanggal]
     );
-    res.status(201).json({ message: 'Antrian berhasil diajukan' });
+    const nomorAntrian = countRows[0].next_nomor;
+
+    const { rows: insRows } = await pool.query(
+      'INSERT INTO pengajuan_antrian (nik, nama_lengkap, tanggal, jenis_layanan, nomor_antrian, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [user.nik, user.nama_lengkap, tanggal, jenis_layanan, nomorAntrian, 'Pending']
+    );
+
+    const { rows: admins } = await pool.query("SELECT id FROM users WHERE role = 'admin'");
+    if (admins.length > 0) {
+      const notifValues = admins.map(a => [a.id, 'new_queue', 'Antrian Baru', `${user.nama_lengkap} mengajukan antrian ${jenis_layanan} tanggal ${tanggal} (No. ${nomorAntrian})`]);
+      const placeholders = notifValues.map((_, i) => `($${i*4+1}, $${i*4+2}, $${i*4+3}, $${i*4+4})`).join(', ');
+      await pool.query(`INSERT INTO notifications (user_id, type, title, message) VALUES ${placeholders}`, notifValues.flat());
+    }
+
+    await logActivity(req.user.id, 'queue_submitted', 'queue', insRows[0].id,
+      `Mengajukan antrian ${jenis_layanan} tanggal ${tanggal} (No. ${nomorAntrian})`);
+
+    res.status(201).json({ message: 'Antrian berhasil diajukan', nomor_antrian: nomorAntrian });
   } catch (err) {
     logger.error(err.message, { stack: err.stack });
     res.status(500).json({ message: 'Terjadi kesalahan server' });
@@ -118,6 +138,17 @@ exports.submitComplaint = async (req, res) => {
       'INSERT INTO pengaduan (nik, nama_lengkap, isi_aduan, status) VALUES ($1, $2, $3, $4)',
       [user.nik, nama_pengadu, isi_aduan, 'Baru']
     );
+
+    const { rows: admins } = await pool.query("SELECT id FROM users WHERE role = 'admin'");
+    if (admins.length > 0) {
+      const notifValues = admins.map(a => [a.id, 'new_complaint', 'Pengaduan Baru', `${user.nama_lengkap} mengirim pengaduan baru: "${isi_aduan.slice(0, 80)}..."`]);
+      const placeholders = notifValues.map((_, i) => `($${i*4+1}, $${i*4+2}, $${i*4+3}, $${i*4+4})`).join(', ');
+      await pool.query(`INSERT INTO notifications (user_id, type, title, message) VALUES ${placeholders}`, notifValues.flat());
+    }
+
+    await logActivity(req.user.id, 'complaint_submitted', 'complaint', null,
+      `Mengirim pengaduan: "${isi_aduan.slice(0, 100)}"`);
+
     res.status(201).json({ message: 'Aduan berhasil dikirim' });
   } catch (err) {
     logger.error(err.message, { stack: err.stack });
@@ -147,6 +178,9 @@ exports.changePassword = async (req, res) => {
       [hashedBaru, req.user.id]
     );
 
+    await logActivity(req.user.id, 'password_changed', 'profile', req.user.id,
+      'Mengubah password');
+
     res.json({ message: 'Password berhasil diubah' });
   } catch (err) {
     logger.error(err.message, { stack: err.stack });
@@ -169,6 +203,34 @@ exports.getHistory = async (req, res) => {
     );
 
     res.json({ antrian, pengaduan });
+  } catch (err) {
+    logger.error(err.message, { stack: err.stack });
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+};
+
+exports.getActivityHistory = async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 30));
+    const offset = (page - 1) * limit;
+
+    const countResult = await pool.query(
+      'SELECT COUNT(*) AS total FROM activity_history WHERE user_id = $1',
+      [req.user.id]
+    );
+    const total = parseInt(countResult.rows[0].total);
+
+    const { rows } = await pool.query(
+      `SELECT id, action, entity_type, entity_id, description, metadata, created_at
+       FROM activity_history
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [req.user.id, limit, offset]
+    );
+
+    res.json({ data: rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (err) {
     logger.error(err.message, { stack: err.stack });
     res.status(500).json({ message: 'Terjadi kesalahan server' });

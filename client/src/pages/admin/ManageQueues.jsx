@@ -7,7 +7,6 @@ export default function ManageQueues() {
   const [queues, setQueues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
-  const [nomorAntrian, setNomorAntrian] = useState('');
   const [status, setStatus] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -28,7 +27,6 @@ export default function ManageQueues() {
 
   const openModal = (q) => {
     setSelected(q);
-    setNomorAntrian(q.nomor_antrian || '');
     setStatus(q.status || '');
   };
 
@@ -38,7 +36,6 @@ export default function ManageQueues() {
     setSaving(true);
     try {
       await api.put(`/admin/submissions/queues/${selected.id}`, {
-        nomor_antrian: Number(nomorAntrian),
         status,
       });
       toast.success('Antrian berhasil diperbarui');
@@ -108,11 +105,10 @@ export default function ManageQueues() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Antrian</label>
                 <input
-                  type="number"
-                  value={nomorAntrian}
-                  onChange={(e) => setNomorAntrian(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
+                  type="text"
+                  value={selected.nomor_antrian ?? '-'}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
                 />
               </div>
               <div>

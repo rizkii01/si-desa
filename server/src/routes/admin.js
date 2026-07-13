@@ -3,7 +3,7 @@ const { verifyToken, roleCheck } = require('../middleware/auth');
 const { createResidentRules } = require('../middleware/validate');
 const {
   getDashboard,
-  getResidents, getResident, createResident, updateResident, deactivateResident,
+  getResidents, getResident, createResident, updateResident, deactivateResident, activateResident,
   getAdmins, createAdmin, deactivateAdmin,
   getQueues, updateQueue,
   getComplaints, updateComplaint,
@@ -12,7 +12,7 @@ const {
   getAdminSmartLetters, getAdminSmartLetterDetail, approveSmartLetter, rejectSmartLetter,
 } = require('../controllers/smartLetterController');
 const {
-  getNotifications, getUnreadCount, markAsRead,
+  getNotifications, getUnreadCount, markAsRead, markAllAsRead,
 } = require('../controllers/notificationController');
 
 const router = Router();
@@ -25,6 +25,7 @@ router.get('/residents/:id', getResident);
 router.post('/residents', createResidentRules, createResident);
 router.put('/residents/:id', updateResident);
 router.put('/residents/:id/deactivate', deactivateResident);
+router.put('/residents/:id/activate', activateResident);
 
 router.get('/admins', getAdmins);
 router.post('/admins', createResidentRules, createAdmin);
@@ -43,6 +44,7 @@ router.put('/smart-letters/:id/reject', rejectSmartLetter);
 
 router.get('/notifications', getNotifications);
 router.get('/notifications/unread-count', getUnreadCount);
+router.put('/notifications/read-all', markAllAsRead);
 router.put('/notifications/:id/read', markAsRead);
 
 module.exports = router;

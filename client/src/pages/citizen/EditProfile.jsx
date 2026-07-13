@@ -82,11 +82,17 @@ export default function EditProfile() {
       if (fotoProfil) {
         const fd = new FormData();
         fd.append('foto_profil', fotoProfil);
-        await api.post('/warga/profile/photo', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        try {
+          await api.post('/warga/profile/photo', fd);
+        } catch (photoErr) {
+          toast.error('Profil tersimpan, tapi gagal upload foto: ' + (photoErr.response?.data?.message || 'error'));
+          setFormLoaded(false);
+          navigate('/warga/profile');
+          return;
+        }
       }
       toast.success('Profil berhasil diperbarui');
+      setFormLoaded(false);
       navigate('/warga/profile');
     } catch (err) {
       const msg = err.response?.data?.message || 'Gagal memperbarui profil';

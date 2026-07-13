@@ -4,7 +4,7 @@ const { uploadProfil, uploadBerkas } = require('../middleware/upload');
 const { updateProfileRules, changePasswordRules } = require('../middleware/validate');
 const {
   getProfile, updateProfile, uploadPhoto,
-  submitQueue, submitComplaint, getHistory, changePassword,
+  submitQueue, submitComplaint, getHistory, changePassword, getActivityHistory,
 } = require('../controllers/wargaController');
 const {
   submitSmartLetter,
@@ -29,6 +29,7 @@ router.put('/change-password', changePasswordRules, changePassword);
 router.post('/submissions/queues', submitQueue);
 router.post('/submissions/complaints', submitComplaint);
 router.get('/submissions/history', getHistory);
+router.get('/activity-history', getActivityHistory);
 
 router.post('/smart-letters', uploadBerkas, submitSmartLetter);
 router.get('/smart-letters', getSmartLetters);
