@@ -18,11 +18,6 @@ export default function CitizenLayout() {
     { to: "/warga/history", label: "Riwayat Aktivitas", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
     { to: "/warga/submit-queue", label: "Ambil Antrian", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
     { to: "/warga/submit-complaint", label: "Aduan", icon: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" },
-    {
-      to: "/warga/notifications",
-      label: "Notifikasi",
-      icon: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9",
-    },
   ];
 
   const closeSidebar = () => setSidebarOpen(false);
@@ -65,7 +60,6 @@ export default function CitizenLayout() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={link.icon} />
               </svg>
               {link.label}
-              {link.to === "/warga/notifications" && notifCount > 0 && <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-red-100 bg-red-500 rounded-full">{notifCount}</span>}
             </NavLink>
           ))}
         </nav>
@@ -85,6 +79,16 @@ export default function CitizenLayout() {
           </div>
           <div className="flex items-center gap-2 md:gap-4">
             <span className="text-xs md:text-sm text-gray-600 truncate max-w-25 md:max-w-none">{displayName(user)}</span>
+            <Link to="/warga/notifications" className="relative p-2 -mr-1 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {notifCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold leading-none text-red-100 bg-red-500 rounded-full">
+                  {notifCount > 9 ? '9+' : notifCount}
+                </span>
+              )}
+            </Link>
             <button onClick={logout} className="text-xs md:text-sm text-red-500 hover:text-red-700 font-medium">
               Logout
             </button>
