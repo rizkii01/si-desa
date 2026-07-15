@@ -6,7 +6,7 @@ const {
   getResidents, getResident, createResident, updateResident, deactivateResident, activateResident,
   getAdmins, createAdmin, deactivateAdmin,
   getQueues, updateQueue,
-  getComplaints, updateComplaint,
+  getComplaints, getComplaintDetail, updateComplaint,
 } = require('../controllers/adminController');
 const {
   getAdminSmartLetters, getAdminSmartLetterDetail, approveSmartLetter, rejectSmartLetter,
@@ -35,6 +35,7 @@ router.get('/submissions/queues', getQueues);
 router.put('/submissions/queues/:id', updateQueue);
 
 router.get('/submissions/complaints', getComplaints);
+router.get('/submissions/complaints/:id', getComplaintDetail);
 router.put('/submissions/complaints/:id/reply', updateComplaint);
 
 router.get('/smart-letters', getAdminSmartLetters);

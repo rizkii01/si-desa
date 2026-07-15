@@ -1,19 +1,14 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import StatusBadge from '../../components/StatusBadge';
 
 export default function ManageComplaints() {
+  const navigate = useNavigate();
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState(null);
-  const [status, setStatus] = useState('');
-  const [balasan, setBalasan] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetchComplaints();
-  }, []);
+  const [filter, setFilter] = useState('');
 
   async function fetchComplaints() {
     try {
@@ -26,30 +21,13 @@ export default function ManageComplaints() {
     }
   }
 
-  const openModal = (c) => {
-    setSelected(c);
-    setStatus(c.status || '');
-    setBalasan(c.balasan_admin || '');
-  };
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selected) return;
-    setSaving(true);
-    try {
-      await api.put(`/admin/submissions/complaints/${selected.id}/reply`, {
-        status,
-        balasan_admin: balasan,
-      });
-      toast.success('Balasan aduan berhasil dikirim');
-      setSelected(null);
-      fetchComplaints();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Gagal mengirim balasan');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const filtered = filter
+    ? complaints.filter((c) => c.status === filter)
+    : complaints;
 
   if (loading) {
     return (
@@ -61,9 +39,24 @@ export default function ManageComplaints() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Aduan</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Aduan</h1>
+        <div className="flex items-center gap-2">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            <option value="">Semua Status</option>
+            <option value="Baru">Baru</option>
+            <option value="Diproses">Diproses</option>
+            <option value="Selesai">Selesai</option>
+          </select>
+          <span className="text-sm text-gray-500">{filtered.length} aduan</span>
+        </div>
+      </div>
 
-      {complaints.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="text-center py-20 text-gray-500">Belum ada data aduan.</div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
@@ -74,69 +67,30 @@ export default function ManageComplaints() {
                 <th className="px-4 py-3 font-medium">Nama</th>
                 <th className="px-4 py-3 font-medium">Isi Aduan</th>
                 <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Balasan Admin</th>
                 <th className="px-4 py-3 font-medium">Tanggal</th>
+                <th className="px-4 py-3 font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {complaints.map((c, i) => (
-                <tr
-                  key={c.id}
-                  className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => openModal(c)}
-                >
+              {filtered.map((c, i) => (
+                <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">{i + 1}</td>
                   <td className="px-4 py-3">{c.nama_warga || c.nama_lengkap}</td>
                   <td className="px-4 py-3 max-w-xs truncate">{c.isi_aduan}</td>
                   <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
-                  <td className="px-4 py-3">{c.balasan_admin || '-'}</td>
                   <td className="px-4 py-3">{c.tanggal_pengaduan ? new Date(c.tanggal_pengaduan).toLocaleDateString('id-ID') : '-'}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => navigate(`/admin/complaints/${c.id}`)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
+                    >
+                      Detail
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {selected && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Balas Aduan</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Pilih status</option>
-                  <option value="Baru">Baru</option>
-                  <option value="Diproses">Diproses</option>
-                  <option value="Selesai">Selesai</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Balasan Admin</label>
-                <textarea
-                  value={balasan}
-                  onChange={(e) => setBalasan(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  rows={4}
-                  required
-                />
-              </div>
-              <div className="flex gap-3">
-                <button type="submit" disabled={saving} className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition">
-                  {saving ? 'Menyimpan...' : 'Kirim'}
-                </button>
-                <button type="button" onClick={() => setSelected(null)} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition">
-                  Batal
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
     </div>

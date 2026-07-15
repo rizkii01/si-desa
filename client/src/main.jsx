@@ -14,6 +14,7 @@ import Profile from './pages/citizen/Profile'
 import EditProfile from './pages/citizen/EditProfile'
 import SubmitQueue from './pages/citizen/SubmitQueue'
 import SubmitComplaint from './pages/citizen/SubmitComplaint'
+import ComplaintDetail from './pages/citizen/ComplaintDetail'
 import History from './pages/citizen/History'
 import SmartSubmitLetter from './pages/citizen/SmartSubmitLetter'
 import SmartLetterHistory from './pages/citizen/SmartLetterHistory'
@@ -24,6 +25,7 @@ import ResidentDetail from './pages/admin/ResidentDetail'
 import ManageAdmins from './pages/admin/ManageAdmins'
 import ManageQueues from './pages/admin/ManageQueues'
 import ManageComplaints from './pages/admin/ManageComplaints'
+import AdminComplaintDetail from './pages/admin/AdminComplaintDetail'
 import ManageSmartLetters from './pages/admin/ManageSmartLetters'
 import SmartLetterDetail from './pages/admin/SmartLetterDetail'
 import AdminNotifications from './pages/admin/AdminNotifications'
@@ -58,6 +60,7 @@ const router = createBrowserRouter([
           { path: 'edit-profile', element: <EditProfile /> },
           { path: 'submit-queue', element: <SubmitQueue /> },
           { path: 'submit-complaint', element: <SubmitComplaint /> },
+          { path: 'complaints/:id', element: <ComplaintDetail /> },
           { path: 'history', element: <History /> },
           { path: 'smart-submit-letter', element: <SmartSubmitLetter /> },
           { path: 'smart-letters', element: <SmartLetterHistory /> },
@@ -75,6 +78,7 @@ const router = createBrowserRouter([
           { path: 'admins', element: <ManageAdmins /> },
           { path: 'queues', element: <ManageQueues /> },
           { path: 'complaints', element: <ManageComplaints /> },
+          { path: 'complaints/:id', element: <AdminComplaintDetail /> },
           { path: 'smart-letters', element: <ManageSmartLetters /> },
           { path: 'smart-letters/:id', element: <SmartLetterDetail /> },
           { path: 'notifications', element: <AdminNotifications /> },

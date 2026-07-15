@@ -146,10 +146,11 @@ exports.submitComplaint = async (req, res) => {
     const user = await getCurrentUser(req.user.id);
     if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
-    await pool.query(
-      'INSERT INTO pengaduan (nik, nama_lengkap, isi_aduan, status) VALUES ($1, $2, $3, $4)',
+    const { rows: inserted } = await pool.query(
+      'INSERT INTO pengaduan (nik, nama_lengkap, isi_aduan, status) VALUES ($1, $2, $3, $4) RETURNING id',
       [user.nik, nama_pengadu, isi_aduan, 'Baru']
     );
+    const complaintId = inserted[0].id;
 
     const { rows: admins } = await pool.query("SELECT id FROM users WHERE role = 'admin'");
     if (admins.length > 0) {
@@ -158,10 +159,27 @@ exports.submitComplaint = async (req, res) => {
       await pool.query(`INSERT INTO notifications (user_id, type, title, message) VALUES ${placeholders}`, notifValues.flat());
     }
 
-    await logActivity(req.user.id, 'complaint_submitted', 'complaint', null,
+    await logActivity(req.user.id, 'complaint_submitted', 'complaint', complaintId,
       `Mengirim pengaduan: "${isi_aduan.slice(0, 100)}"`);
 
-    res.status(201).json({ message: 'Aduan berhasil dikirim' });
+    res.status(201).json({ message: 'Aduan berhasil dikirim', data: { id: complaintId } });
+  } catch (err) {
+    logger.error(err.message, { stack: err.stack });
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+};
+
+exports.getComplaintDetail = async (req, res) => {
+  try {
+    const user = await getCurrentUser(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
+
+    const { rows } = await pool.query(
+      'SELECT id, nama_lengkap, isi_aduan, status, balasan_admin, tanggal_pengaduan FROM pengaduan WHERE id = $1 AND nik = $2',
+      [req.params.id, user.nik]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: 'Pengaduan tidak ditemukan' });
+    res.json(rows[0]);
   } catch (err) {
     logger.error(err.message, { stack: err.stack });
     res.status(500).json({ message: 'Terjadi kesalahan server' });

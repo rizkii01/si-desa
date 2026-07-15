@@ -290,7 +290,22 @@ exports.updateQueue = async (req, res) => {
   }
 };
 
-// [DEPRECATED] Pengaduan masih dipertahankan untuk kompatibilitas
+exports.getComplaintDetail = async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT p.*, w.nama_lengkap AS nama_warga, w.no_hp, w.alamat AS alamat_warga
+       FROM pengaduan p LEFT JOIN users w ON p.nik = w.nik
+       WHERE p.id = $1`,
+      [req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: 'Pengaduan tidak ditemukan' });
+    res.json(rows[0]);
+  } catch (err) {
+    logger.error(err.message, { stack: err.stack });
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+};
+
 exports.getComplaints = async (req, res) => {
   try {
     const { rows } = await pool.query(

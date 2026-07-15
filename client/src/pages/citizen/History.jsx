@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import StatusBadge from '../../components/StatusBadge';
@@ -45,6 +46,7 @@ function groupByDate(items) {
 }
 
 export default function History() {
+  const navigate = useNavigate();
   const [tabData, setTabData] = useState({ antrian: [], pengaduan: [] });
   const [activities, setActivities] = useState([]);
   const [actPagination, setActPagination] = useState(null);
@@ -53,6 +55,19 @@ export default function History() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('aktivitas');
   const [invoiceQueue, setInvoiceQueue] = useState(null);
+
+  async function fetchActivities(page) {
+    try {
+      setLoading(true);
+      const res = await api.get(`/warga/activity-history?page=${page}&limit=30`);
+      setActivities(res.data.data);
+      setActPagination(res.data.pagination);
+    } catch {
+      toast.error('Gagal memuat riwayat aktivitas');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (activeTab === 'aktivitas') {
@@ -70,19 +85,6 @@ export default function History() {
       })
       .finally(() => setLoading(false));
   }, []);
-
-  async function fetchActivities(page) {
-    try {
-      setLoading(true);
-      const res = await api.get(`/warga/activity-history?page=${page}&limit=30`);
-      setActivities(res.data.data);
-      setActPagination(res.data.pagination);
-    } catch {
-      toast.error('Gagal memuat riwayat aktivitas');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   if (loading && activeTab !== 'aktivitas') {
     return (
@@ -237,6 +239,7 @@ export default function History() {
                     <th className="text-left px-4 py-3 font-medium">Status</th>
                     <th className="text-left px-4 py-3 font-medium">Balasan Admin</th>
                     <th className="text-left px-4 py-3 font-medium">Tanggal</th>
+                    <th className="text-left px-4 py-3 font-medium">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -246,8 +249,16 @@ export default function History() {
                       <td className="px-4 py-3">{item.nama_lengkap}</td>
                       <td className="px-4 py-3 max-w-[250px] truncate">{item.isi_aduan}</td>
                       <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
-                      <td className="px-4 py-3 text-gray-500">{item.balasan_admin || '-'}</td>
+                      <td className="px-4 py-3 text-gray-500 max-w-[200px] truncate">{item.balasan_admin || '-'}</td>
                       <td className="px-4 py-3 text-xs text-gray-500">{item.tanggal_pengaduan ? new Date(item.tanggal_pengaduan).toLocaleDateString('id-ID') : '-'}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => navigate(`/warga/complaints/${item.id}`)}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
+                        >
+                          Detail
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
