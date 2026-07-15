@@ -114,7 +114,18 @@ exports.submitQueue = async (req, res) => {
     await logActivity(req.user.id, 'queue_submitted', 'queue', insRows[0].id,
       `Mengajukan antrian ${jenis_layanan} tanggal ${tanggal} (No. ${nomorAntrian})`);
 
-    res.status(201).json({ message: 'Antrian berhasil diajukan', nomor_antrian: nomorAntrian });
+    res.status(201).json({
+      message: 'Antrian berhasil diajukan',
+      data: {
+        id: insRows[0].id,
+        nik: user.nik,
+        nama_lengkap: user.nama_lengkap,
+        tanggal,
+        jenis_layanan: jenisLayanan,
+        nomor_antrian: nomorAntrian,
+        status: 'Pending',
+      },
+    });
   } catch (err) {
     logger.error(err.message, { stack: err.stack });
     res.status(500).json({ message: 'Terjadi kesalahan server' });
@@ -195,7 +206,7 @@ exports.getHistory = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
     const { rows: antrian } = await pool.query(
-      'SELECT id, tanggal, jenis_layanan, nomor_antrian, status FROM pengajuan_antrian WHERE nik = $1 ORDER BY tanggal DESC, created_at DESC',
+      'SELECT id, nik, nama_lengkap, tanggal, jenis_layanan, nomor_antrian, status FROM pengajuan_antrian WHERE nik = $1 ORDER BY tanggal DESC, created_at DESC',
       [user.nik]
     );
     const { rows: pengaduan } = await pool.query(

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
+import QueueInvoice from '../../components/QueueInvoice';
 
 const LAYANAN = [
   'Pengurusan Kartu Keluarga (KK)',
@@ -22,12 +22,12 @@ function getTomorrow() {
 
 export default function SubmitQueue() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [tanggal, setTanggal] = useState('');
   const [jenisLayanan, setJenisLayanan] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [queueResult, setQueueResult] = useState(null);
 
   useEffect(() => {
     api.get('/warga/profile')
@@ -44,9 +44,9 @@ export default function SubmitQueue() {
     }
     setSubmitting(true);
     try {
-      await api.post('/warga/submissions/queues', { tanggal, jenis_layanan: jenisLayanan });
+      const res = await api.post('/warga/submissions/queues', { tanggal, jenis_layanan: jenisLayanan });
       toast.success('Antrian berhasil diambil');
-      navigate('/warga/history');
+      setQueueResult(res.data.data);
     } catch (err) {
       const msg = err.response?.data?.message || 'Gagal mengambil antrian';
       toast.error(msg);
@@ -59,6 +59,35 @@ export default function SubmitQueue() {
     return (
       <div className="flex justify-center py-20">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  if (queueResult) {
+    return (
+      <div className="max-w-2xl">
+        <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-green-800">Antrian Berhasil Diambil!</h2>
+              <p className="text-sm text-green-600">Nomor antrian Anda: <span className="font-bold text-lg">#{queueResult.nomor_antrian}</span></p>
+            </div>
+          </div>
+          <p className="text-sm text-green-700 mb-4">Tunjukkan invoice di bawah kepada petugas di loket pelayanan desa.</p>
+          <button
+            onClick={() => setQueueResult(null)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+          >
+            Lihat Invoice
+          </button>
+        </div>
+
+        <QueueInvoice queue={queueResult} onClose={() => setQueueResult(null)} />
       </div>
     );
   }

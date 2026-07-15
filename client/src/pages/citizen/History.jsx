@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import StatusBadge from '../../components/StatusBadge';
+import QueueInvoice from '../../components/QueueInvoice';
 
 const TABS = [
   { key: 'aktivitas', label: 'Riwayat Aktivitas' },
@@ -51,6 +52,7 @@ export default function History() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('aktivitas');
+  const [invoiceQueue, setInvoiceQueue] = useState(null);
 
   useEffect(() => {
     if (activeTab === 'aktivitas') {
@@ -191,6 +193,7 @@ export default function History() {
                     <th className="text-left px-4 py-3 font-medium">Jenis Layanan</th>
                     <th className="text-left px-4 py-3 font-medium">No. Antrian</th>
                     <th className="text-left px-4 py-3 font-medium">Status</th>
+                    <th className="text-left px-4 py-3 font-medium">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -201,6 +204,14 @@ export default function History() {
                       <td className="px-4 py-3">{item.jenis_layanan}</td>
                       <td className="px-4 py-3 font-mono font-bold text-blue-600">{item.nomor_antrian ?? '-'}</td>
                       <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => setInvoiceQueue(item)}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
+                        >
+                          Invoice
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -244,6 +255,10 @@ export default function History() {
             </div>
           )}
         </div>
+      )}
+
+      {invoiceQueue && (
+        <QueueInvoice queue={invoiceQueue} onClose={() => setInvoiceQueue(null)} />
       )}
     </div>
   );
