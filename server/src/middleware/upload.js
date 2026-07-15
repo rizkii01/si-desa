@@ -27,10 +27,10 @@ const berkasStorage = multer.diskStorage({
 });
 
 const imageFilter = (req, file, cb) => {
-  const allowed = ['.jpg', '.jpeg', '.png'];
+  const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
   const ext = path.extname(file.originalname).toLowerCase();
   if (allowed.includes(ext)) cb(null, true);
-  else cb(new Error('Hanya file JPG/JPEG/PNG yang diizinkan'));
+  else cb(new Error('Hanya file JPG/JPEG/PNG/WebP yang diizinkan'));
 };
 
 const berkasFilter = (req, file, cb) => {

@@ -138,7 +138,7 @@ export default function EditProfile() {
           </div>
           <label className="mt-3 cursor-pointer text-sm text-blue-600 hover:text-blue-800 font-medium">
             Ganti Foto
-            <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+            <input type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleFileChange} className="hidden" />
           </label>
         </div>
 
