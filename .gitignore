@@ -16,3 +16,6 @@ docker-compose.override.yml
 # Certbot
 nginx/ssl/
 nginx/certbot/
+
+# Documentation (design docs, plantuml, mermaid)
+docs/

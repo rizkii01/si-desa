@@ -1,2 +1,5 @@
 {
+  "plantuml.exportFormat": "png",
+  "plantuml.exportDpi": 300,
+  "plantuml.jarArgs": []
 }
